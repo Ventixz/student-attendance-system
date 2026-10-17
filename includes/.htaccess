@@ -1,0 +1,2 @@
+# Only pages in the app root and /admin are meant to be opened in a browser.
+Require all denied

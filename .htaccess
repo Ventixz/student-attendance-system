@@ -1,0 +1,31 @@
+# Clean web addresses: /attendance/admin/login instead of /attendance/admin/login.php,
+# and /attendance/ instead of /attendance/index.php. Needs Apache's mod_rewrite (on by default in XAMPP).
+# Without it the site still works, just with ".php" in the addresses.
+
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+
+# Never serve the git history folder.
+RedirectMatch 404 /\.git
+
+<IfModule mod_rewrite.c>
+    # Tells the PHP code to write links without ".php" (see page() in includes/helpers.php).
+    SetEnv CLEAN_URLS 1
+
+    RewriteEngine On
+
+    # Old addresses ending in index.php -> the folder (browser visits only, never form posts)
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{THE_REQUEST} \s(/[^?\s]*?/)index\.php[?\s]
+    RewriteRule ^ %1 [R=302,L,NE]
+
+    # Old addresses ending in .php -> the same address without it
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{THE_REQUEST} \s(/[^?\s]+)\.php[?\s]
+    RewriteRule ^ %1 [R=302,L,NE]
+
+    # Clean address -> the matching .php file
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.+)$ $1.php [L]
+</IfModule>
