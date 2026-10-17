@@ -1,0 +1,11 @@
+# Keep the web root to just the website files.
+.git
+.github
+.gitignore
+.gitattributes
+.dockerignore
+Dockerfile
+compose.yaml
+*.bat
+*.sh
+*.md

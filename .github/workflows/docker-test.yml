@@ -1,0 +1,82 @@
+# Builds the Docker setup and checks that the website really works inside it:
+# installer, sign-in, every admin page, clean addresses, private folders and saved data.
+name: Docker build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      B: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start the containers
+        run: docker compose up -d --build --wait --wait-timeout 240
+
+      - name: Run the installer and sign in
+        run: |
+          set -e
+          csrf() { grep -o 'name="csrf" value="[a-f0-9]*"' | head -1 | sed 's/.*value="//;s/"//'; }
+          for i in $(seq 1 30); do curl -s -o /dev/null "$B/" && break; sleep 2; done
+
+          token=$(curl -s -c jar -b jar "$B/install" | csrf)
+          curl -s -c jar -b jar --data-urlencode "csrf=$token" \
+            -d "full_name=CI Admin&username=ciadmin&password=ci-password-123&password_confirm=ci-password-123&sample=1" \
+            "$B/install" | grep -q "Installation complete"
+          echo "installer: ok"
+
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$B/install")" = "302"
+          echo "installer hidden after setup: ok"
+
+          token=$(curl -s -c jar -b jar "$B/admin/login" | csrf)
+          test "$(curl -s -c jar -b jar -o /dev/null -w '%{http_code}' --data-urlencode "csrf=$token" \
+            -d "username=ciadmin&password=ci-password-123" "$B/admin/login")" = "302"
+          echo "sign-in: ok"
+
+      - name: Check every page
+        run: |
+          set -e
+          for p in "" "check" "check?student_no=2026-0001&last_name=Reyes" \
+                   "admin/" "admin/attendance" "admin/attendance?subject_id=1" "admin/quick_entry" "admin/records" \
+                   "admin/report_daily" "admin/report_status?status=Absent" "admin/report_student?id=1" \
+                   "admin/report_summary" "admin/students" "admin/subjects" "admin/enroll?subject_id=1" \
+                   "admin/users" "admin/profile"; do
+            code=$(curl -s -b jar -o page.html -w '%{http_code}' "$B/$p")
+            echo "$code /$p"
+            test "$code" = "200"
+            grep -q "Something went wrong" page.html && exit 1 || true
+          done
+          curl -s "$B/check?student_no=2026-0001&last_name=Reyes" | grep -q "Overall attendance"
+          curl -s -b jar "$B/admin/report_summary?export=csv" | grep -q "Student ID"
+          echo "pages, student lookup and CSV export: ok"
+
+      - name: Check clean addresses and private folders
+        run: |
+          set -e
+          curl -s -o /dev/null -w '%{redirect_url}' "$B/admin/login.php" | grep -q '/admin/login$'
+          curl -s -o /dev/null -w '%{redirect_url}' "$B/index.php" | grep -q ':8080/$'
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$B/includes/header")" = "403"
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$B/sql/schema.sql")" = "403"
+          curl -s http://localhost:8081/ | grep -qi "phpmyadmin"
+          echo "clean addresses, blocked folders, phpMyAdmin: ok"
+
+      - name: Check data survives a restart
+        run: |
+          set -e
+          docker compose down
+          docker compose up -d --wait --wait-timeout 240
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$B/install")" = "302"
+          echo "data kept after restart: ok"
+
+      - name: No PHP errors in the server log
+        if: always()
+        run: |
+          docker compose logs web
+          if docker compose logs web | grep -E "PHP (Fatal|Parse|Warning|Notice)"; then exit 1; fi
