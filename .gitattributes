@@ -1,0 +1,5 @@
+# Windows scripts need Windows line endings; shell scripts and Docker files need Unix ones.
+*.bat       text eol=crlf
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+compose.yaml text eol=lf

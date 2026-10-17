@@ -6,6 +6,8 @@ When you're done, you'll open the website in your web browser (Chrome, Edge, Fir
 
 > **What does "localhost" mean?** The website runs on your own computer, not on the internet. Only your computer, plus devices on the same Wi-Fi if you choose (see Part 8), can open it.
 
+> 🐳 **Setting it up on several laptops?** The **[Docker Guide](DOCKER-GUIDE.md)** is easier. Install one program, then double-click `start.bat`. No XAMPP and no folder juggling.
+
 ---
 
 ## What you need
@@ -170,14 +172,14 @@ All attendance is stored in a database on the main computer. To make a backup co
 
 1. Open `C:\xampp\htdocs\attendance`.
 2. Right-click **`config.php`** → **Open with** → **Notepad**.
-3. Change only the text **between the quote marks**. Keep the quote marks `'` and the semicolon `;` at the end of each line.
+3. Change only the **last text in quote marks** on the line, which is the current value. Keep the quote marks `'`, the brackets and the semicolon `;` exactly as they are.
 
 | What to change | Find this line | Example |
 |---|---|---|
-| School name | `define('SCHOOL_NAME', 'Your School Name');` | `define('SCHOOL_NAME', 'Riverside High School');` |
-| Time zone (if times look wrong) | `define('APP_TIMEZONE', 'Asia/Shanghai');` | `'Asia/Manila'`, `'America/New_York'`, `'Europe/London'` ([full list](https://www.php.net/timezones)) |
-| Default look | `define('DEFAULT_THEME', 'dark');` | `'light'` |
-| "Low attendance" warning level | `define('LOW_ATTENDANCE_THRESHOLD', 75);` | `80` (no quote marks for numbers) |
+| School name | `define('SCHOOL_NAME', setting('SCHOOL_NAME', 'Your School Name'));` | `define('SCHOOL_NAME', setting('SCHOOL_NAME', 'Riverside High School'));` |
+| Time zone (if times look wrong) | `define('APP_TIMEZONE', setting('APP_TIMEZONE', 'Asia/Shanghai'));` | `'Asia/Manila'`, `'America/New_York'`, `'Europe/London'` ([full list](https://www.php.net/timezones)) |
+| Default look | `define('DEFAULT_THEME', setting('DEFAULT_THEME', 'dark'));` | `'light'` |
+| "Low attendance" warning level | `define('LOW_ATTENDANCE_THRESHOLD', (int) setting('LOW_ATTENDANCE_THRESHOLD', '75'));` | `'80'` |
 
 4. Click **File → Save**, then refresh the website in your browser.
 

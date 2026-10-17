@@ -1,8 +1,23 @@
 # Student Attendance Monitoring System (AttendTrack)
 
-A PHP + MySQL website for XAMPP with a public site, a student attendance lookup, and an admin panel for administrators and teachers. Dark mode is on by default, with a sun/moon switch on every page.
+A PHP + MySQL website with a public site, a student attendance lookup, and an admin panel for administrators and teachers. It runs with **Docker** (any laptop, one double-click) or **XAMPP**. Dark mode is on by default, with a sun/moon switch on every page.
 
-> **New to this? Follow the [step-by-step Setup Guide](SETUP-GUIDE.md).** It assumes no technical knowledge.
+> **New to this?** Follow one of the step-by-step guides. Both assume no technical knowledge:
+> - 🐳 **[Docker Guide](DOCKER-GUIDE.md)**: easiest on several laptops. Install Docker Desktop, then double-click `start.bat`.
+> - 🖥️ **[XAMPP Setup Guide](SETUP-GUIDE.md)**: the classic way, if Docker isn't an option.
+
+## Quick setup (Docker)
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and start it.
+2. In this folder, double-click `start.bat` (Windows), or run `docker compose up -d --build` (any system).
+3. Open **http://localhost:8080/install** once to create the administrator account.
+
+| Service | Address | Notes |
+|---|---|---|
+| Website | http://localhost:8080/ | Reachable from other devices on the network |
+| phpMyAdmin | http://localhost:8081/ | This computer only; user `attendance`, password `attendance` |
+
+Data lives in the `attendtrack_attendance-data` volume. It survives `stop.bat`, restarts and new versions of the project folder, and only `docker compose down -v` deletes it. Settings (`SCHOOL_NAME`, `APP_TIMEZONE`, `DEFAULT_THEME`) are environment variables in `compose.yaml`. The GitHub Actions workflow in `.github/workflows/docker-test.yml` builds the containers and tests the installer, every page, clean addresses and data persistence on each push.
 
 ## Quick setup (XAMPP)
 
@@ -22,7 +37,7 @@ The root `.htaccess` uses Apache's `mod_rewrite` (on by default in XAMPP), so ad
 
 ## Configuration
 
-Edit `config.php`:
+Edit `config.php` (XAMPP). Each setting below except `LATE_COUNTS_AS_PRESENT` can also be set as an environment variable of the same name, which is how `compose.yaml` configures Docker.
 
 | Setting | Default | Notes |
 |---|---|---|
@@ -83,7 +98,10 @@ attendance/
 ├── install.php                 One-time installer
 ├── config.php                  Settings
 ├── .htaccess                   Clean addresses (no .php)
-├── SETUP-GUIDE.md              Step-by-step guide for non-technical users
+├── SETUP-GUIDE.md              Step-by-step XAMPP guide for non-technical users
+├── DOCKER-GUIDE.md             Step-by-step Docker guide for non-technical users
+├── Dockerfile, compose.yaml    Docker setup (web server, database, phpMyAdmin)
+├── start.bat / stop.bat        Double-click to start or stop with Docker (start.sh / stop.sh on Mac/Linux)
 ├── admin/                      Admin panel pages
 ├── includes/                   Shared PHP (auth, database, layout, helpers)
 ├── assets/css, js, img         Styles, scripts, favicon

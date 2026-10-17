@@ -1,0 +1,61 @@
+# Student Attendance Monitoring System: Docker setup.
+#
+#   Start:  double-click start.bat (Windows) or run:  docker compose up -d --build
+#   Stop:   double-click stop.bat  (Windows) or run:  docker compose stop
+#
+#   Website:     http://localhost:8080/
+#   phpMyAdmin:  http://localhost:8081/   (backups; sign in as user "attendance", password "attendance")
+#
+# All attendance data is kept in the "attendance-data" volume, so it survives restarts and
+# downloading a newer copy of this project. Only "docker compose down -v" deletes it.
+
+name: attendtrack
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      # Change these for your school, then run start.bat (or docker compose up -d) again.
+      SCHOOL_NAME: "Your School Name"
+      APP_TIMEZONE: "Asia/Shanghai"
+      DEFAULT_THEME: "dark"
+      # Database connection; matches the db service below.
+      DB_HOST: db
+      DB_NAME: attendance_db
+      DB_USER: attendance
+      DB_PASS: attendance
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.11
+    environment:
+      MARIADB_DATABASE: attendance_db
+      MARIADB_USER: attendance
+      MARIADB_PASSWORD: attendance
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+    volumes:
+      - attendance-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    ports:
+      - "127.0.0.1:8081:80"   # this computer only
+    environment:
+      PMA_HOST: db
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  attendance-data:
