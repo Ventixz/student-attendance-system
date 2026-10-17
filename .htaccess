@@ -14,9 +14,10 @@ RedirectMatch 404 /\.git
 
     RewriteEngine On
 
-    # Old addresses ending in index.php -> the folder (browser visits only, never form posts)
+    # Old addresses ending in index.php -> the folder (browser visits only, never form posts).
+    # Matches both /index.php (site at the top level, as in Docker) and /attendance/index.php (XAMPP).
     RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
-    RewriteCond %{THE_REQUEST} \s(/[^?\s]*?/)index\.php[?\s]
+    RewriteCond %{THE_REQUEST} \s(/(?:[^?\s]*/)?)index\.php[?\s]
     RewriteRule ^ %1 [R=302,L,NE]
 
     # Old addresses ending in .php -> the same address without it

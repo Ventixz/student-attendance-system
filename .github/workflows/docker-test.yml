@@ -60,12 +60,14 @@ jobs:
       - name: Check clean addresses and private folders
         run: |
           set -e
-          curl -s -o /dev/null -w '%{redirect_url}' "$B/admin/login.php" | grep -q '/admin/login$'
-          curl -s -o /dev/null -w '%{redirect_url}' "$B/index.php" | grep -q ':8080/$'
-          test "$(curl -s -o /dev/null -w '%{http_code}' "$B/includes/header")" = "403"
-          test "$(curl -s -o /dev/null -w '%{http_code}' "$B/sql/schema.sql")" = "403"
-          curl -s http://localhost:8081/ | grep -qi "phpmyadmin"
-          echo "clean addresses, blocked folders, phpMyAdmin: ok"
+          # expect <description> <actual> <expected>
+          expect() { echo "$1: got '$2', want '$3'"; test "$2" = "$3"; }
+          expect "/admin/login.php redirects" "$(curl -s -o /dev/null -w '%{redirect_url}' "$B/admin/login.php")" "$B/admin/login"
+          expect "/index.php redirects" "$(curl -s -o /dev/null -w '%{redirect_url}' "$B/index.php")" "$B/"
+          expect "/admin/index.php redirects" "$(curl -s -o /dev/null -w '%{redirect_url}' "$B/admin/index.php")" "$B/admin/"
+          expect "/includes is private" "$(curl -s -o /dev/null -w '%{http_code}' "$B/includes/header")" "403"
+          expect "/sql is private" "$(curl -s -o /dev/null -w '%{http_code}' "$B/sql/schema.sql")" "403"
+          expect "phpMyAdmin answers" "$(curl -s http://localhost:8081/ | grep -qi phpmyadmin && echo yes)" "yes"
 
       - name: Check data survives a restart
         run: |
